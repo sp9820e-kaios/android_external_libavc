@@ -1021,7 +1021,6 @@ WORD32 ih264d_parse_inter_slice_data_cabac(dec_struct_t * ps_dec,
         }
 
         u1_num_mbs++;
-        ps_dec->u2_total_mbs_coded++;
         u1_num_mbsNby2++;
         ps_parse_mb_data++;
 
@@ -1072,7 +1071,7 @@ WORD32 ih264d_parse_inter_slice_data_cabac(dec_struct_t * ps_dec,
                                             u1_num_mbs_next, u1_tfr_n_mb,
                                             u1_end_of_row);
             }
-
+            ps_dec->u2_total_mbs_coded += u1_num_mbs;
             if(u1_tfr_n_mb)
                 u1_num_mbs = 0;
             u1_mb_idx = u1_num_mbs;
@@ -1358,7 +1357,6 @@ WORD32 ih264d_parse_inter_slice_data_cavlc(dec_struct_t * ps_dec,
         i2_cur_mb_addr++;
 
         u1_num_mbs++;
-        ps_dec->u2_total_mbs_coded++;
         u1_num_mbsNby2++;
         ps_parse_mb_data++;
 
@@ -1411,7 +1409,7 @@ WORD32 ih264d_parse_inter_slice_data_cavlc(dec_struct_t * ps_dec,
                                             u1_num_mbs_next, u1_tfr_n_mb,
                                             u1_end_of_row);
             }
-
+            ps_dec->u2_total_mbs_coded += u1_num_mbs;
             if(u1_tfr_n_mb)
                 u1_num_mbs = 0;
             u1_mb_idx = u1_num_mbs;
@@ -1466,7 +1464,7 @@ WORD32 ih264d_mark_err_slice_skip(dec_struct_t * ps_dec,
         ih264d_err_pic_dispbuf_mgr(ps_dec);
         return 0;
     }
-
+    ps_dec->ps_dpb_cmds->u1_long_term_reference_flag = 0;
     if(prev_slice_err == 1)
     {
         /* first slice - missing/header corruption */
@@ -1498,6 +1496,10 @@ WORD32 ih264d_mark_err_slice_skip(dec_struct_t * ps_dec,
                    if(ps_dec->ps_pps[i].u1_is_valid == TRUE)
                        j = i;
             {
+                //initialize slice params required by ih264d_start_of_pic to valid values
+                ps_dec->ps_cur_slice->u1_slice_type = P_SLICE;
+                ps_dec->ps_cur_slice->u1_nal_ref_idc = 1;
+                ps_dec->ps_cur_slice->u1_nal_unit_type = 1;
                 ret = ih264d_start_of_pic(ps_dec, poc, ps_cur_poc,
                         ps_dec->ps_cur_slice->u2_frame_num,
                         &ps_dec->ps_pps[j]);
@@ -1620,7 +1622,7 @@ WORD32 ih264d_mark_err_slice_skip(dec_struct_t * ps_dec,
                     ih264d_decode_recon_tfr_nmb(ps_dec, u1_mb_idx, u1_num_mbs,
                             u1_num_mbs_next, u1_tfr_n_mb, u1_end_of_row);
                 }
-
+                ps_dec->u2_total_mbs_coded += u1_num_mbs;
                 ps_dec->u1_mb_idx = 0;
                 ps_dec->u4_num_mbs_cur_nmb = 0;
             }
@@ -1667,6 +1669,9 @@ WORD32 ih264d_mark_err_slice_skip(dec_struct_t * ps_dec,
     }
 
     ps_dec->ps_cur_slice->u2_first_mb_in_slice = ps_dec->u2_total_mbs_coded << u1_mbaff;
+    ps_dec->ps_cur_slice->i1_slice_alpha_c0_offset = 0;
+    ps_dec->ps_cur_slice->i1_slice_beta_offset = 0;
+
     if(ps_dec->ps_cur_slice->u1_field_pic_flag)
         ps_dec->u2_prv_frame_num = ps_dec->ps_cur_slice->u2_frame_num;
 
@@ -1782,7 +1787,6 @@ WORD32 ih264d_mark_err_slice_skip(dec_struct_t * ps_dec,
         i2_cur_mb_addr++;
 
         u1_num_mbs++;
-        ps_dec->u2_total_mbs_coded++;
         u1_num_mbsNby2++;
         ps_parse_mb_data++;
 
@@ -1818,7 +1822,7 @@ WORD32 ih264d_mark_err_slice_skip(dec_struct_t * ps_dec,
                 ih264d_decode_recon_tfr_nmb(ps_dec, u1_mb_idx, u1_num_mbs, u1_num_mbs_next,
                                             u1_tfr_n_mb, u1_end_of_row);
             }
-
+            ps_dec->u2_total_mbs_coded += u1_num_mbs;
             if(u1_tfr_n_mb)
                 u1_num_mbs = 0;
             u1_mb_idx = u1_num_mbs;

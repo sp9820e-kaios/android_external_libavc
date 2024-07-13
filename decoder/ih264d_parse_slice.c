@@ -72,6 +72,7 @@
 #include "ih264d_parse_islice.h"
 #define RET_LAST_SKIP  0x80000000
 
+WORD32 check_app_out_buf_size(dec_struct_t *ps_dec);
 /*!
  **************************************************************************
  * \if Function name : ih264d_form_pred_weight_matrix \endif
@@ -180,6 +181,10 @@ WORD32 ih264d_start_of_pic(dec_struct_t *ps_dec,
     WORD32 ret;
 
     H264_MUTEX_LOCK(&ps_dec->process_disp_mutex);
+
+    /* check output buffer size given by the application */
+    if(check_app_out_buf_size(ps_dec) != IV_SUCCESS)
+        return IVD_DISP_FRM_ZERO_OP_BUF_SIZE;
 
     ps_prev_poc->i4_pic_order_cnt_lsb = ps_cur_poc->i4_pic_order_cnt_lsb;
     ps_prev_poc->i4_pic_order_cnt_msb = ps_cur_poc->i4_pic_order_cnt_msb;
@@ -733,7 +738,7 @@ WORD32 ih264d_start_of_pic(dec_struct_t *ps_dec,
 
     ps_dec->u4_deblk_mb_x = 0;
     ps_dec->u4_deblk_mb_y = 0;
-
+    ps_dec->pu4_wt_ofsts = ps_dec->pu4_wts_ofsts_mat;
 
     H264_MUTEX_UNLOCK(&ps_dec->process_disp_mutex);
     return OK;
@@ -1874,7 +1879,6 @@ WORD32 ih264d_parse_decode_slice(UWORD8 u1_is_idr_slice,
         ps_dec->pv_proc_tu_coeff_data = ps_dec->pv_parse_tu_coeff_data;
     }
 
-    ps_dec->pu4_wt_ofsts = ps_dec->pu4_wts_ofsts_mat;
     if(u1_slice_type == I_SLICE)
     {
         ps_dec->ps_cur_pic->u4_pack_slc_typ |= I_SLC_BIT;
